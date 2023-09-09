@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
-
+import "package:intl/intl.dart";
 import 'package:flutter/material.dart';
 import 'package:weather_app/additional_info.dart';
 import 'package:weather_app/schedule_card.dart';
@@ -16,6 +16,8 @@ class WeatherHomeScreen extends StatefulWidget {
 }
 
 class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
+  late Future<Map<String, dynamic>> weather;
+
   Future<Map<String, dynamic>> getCurrentWeather() async {
     try {
       String cityName = 'London';
@@ -44,6 +46,13 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    weather = getCurrentWeather();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -54,11 +63,15 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
           ),
         ),
         centerTitle: true,
-        actions: const [
+        actions: [
           IconButton(
-            onPressed: null,
-            icon: Icon(Icons.rotate_right_outlined),
-            padding: EdgeInsets.only(
+            onPressed: () {
+              setState(() {
+                weather = getCurrentWeather();
+              });
+            },
+            icon: const Icon(Icons.rotate_right_outlined),
+            padding: const EdgeInsets.only(
               right: 9,
               top: 5,
             ),
@@ -66,7 +79,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
         ],
       ),
       body: FutureBuilder(
-        future: getCurrentWeather(),
+        future: weather,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator.adaptive());
@@ -158,28 +171,46 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                 const SizedBox(
                   height: 10,
                 ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (int i = 0; i < 5; i++)
-                        ScheduleCard(
-                            time: data['list'][i]['dt_txt']
-                                .toString()
-                                .substring(11, 16),
-                            icon: data['list'][i]['weather'][0]['main'] ==
-                                        'Clouds' ||
-                                    data['list'][i]['weather'][0]['main'] ==
-                                        'Sunny'
-                                ? Icons.cloud
-                                : Icons.sunny,
-                            temp: data['list'][i]['main']['temp'].toString()),
-                    ],
-                  ),
-                ),
+                // SingleChildScrollView(
+                //   scrollDirection: Axis.horizontal,
+                //   child: Row(
+                //     children: [
+                //       for (int i = 0; i < 5; i++)
+                //         ScheduleCard(
+                //             time: data['list'][i]['dt_txt']
+                //                 .toString()
+                //                 .substring(11, 16),
+                //             icon: data['list'][i]['weather'][0]['main'] ==
+                //                         'Clouds' ||
+                //                     data['list'][i]['weather'][0]['main'] ==
+                //                         'Sunny'
+                //                 ? Icons.cloud
+                //                 : Icons.sunny,
+                //             temp: data['list'][i]['main']['temp'].toString()),
+                //     ],
+                //   ),
+                // ),
+                SizedBox(
+                  height: 126,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 5,
+                    itemBuilder: (context, index) {
+                      final time =
+                          DateTime.parse(data['list'][index]['dt_txt']);
 
-                const SizedBox(
-                  height: 20,
+                      return ScheduleCard(
+                        time: DateFormat.j().format(time),
+                        icon: data['list'][index]['weather'][0]['main'] ==
+                                    'Clouds' ||
+                                data['list'][index]['weather'][0]['main'] ==
+                                    'Sunny'
+                            ? Icons.cloud
+                            : Icons.sunny,
+                        temp: data['list'][index]['main']['temp'].toString(),
+                      );
+                    },
+                  ),
                 ),
 
                 //additional info
